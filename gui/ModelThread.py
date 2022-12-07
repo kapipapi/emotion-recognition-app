@@ -6,7 +6,7 @@ import torch
 import threading
 
 from gui.CombinedSource import AVCapture
-from gui.audio_preprocess import get_mfccs
+from gui.audio_preprocess import extract_features
 
 
 class ModelThread:
@@ -22,7 +22,7 @@ class ModelThread:
         self.model = model
 
         self.load_model()
-        self.warm_model()
+        # self.warm_model()
 
     def load_model(self):
         if self.device is None:
@@ -70,8 +70,8 @@ class ModelThread:
                 continue
 
             audio = self.get_audio_tensor(audio_data)
-            if audio.shape != torch.Size([1, 10, 156]):
-                print("wrongaudio.shape:", audio.shape, "want [1, 10, 156]")
+            if audio.shape != torch.Size([1, 181, 156]):
+                print("wrongaudio.shape:", audio.shape, "want [1, 181, 156]")
                 continue
 
             video = self.get_video_tensor(video_data)
@@ -80,6 +80,10 @@ class ModelThread:
                 continue
 
             with torch.no_grad():
+                video = video.permute(0, 2, 1, 3, 4)
+                video = video.reshape(video.shape[0] * video.shape[1], video.shape[2], video.shape[3], video.shape[4])
+                video = video.float()
+
                 output = self.model(audio, video)
 
             output = np.argmax(torch.nn.functional.softmax(output, dim=1).tolist())
@@ -96,8 +100,8 @@ class ModelThread:
         return video
 
     def get_audio_tensor(self, audio: np.ndarray) -> torch.Tensor:
-        audio = get_mfccs(audio, sample_rate=22050)
-        audio = torch.tensor(audio)
+        audio = extract_features(audio, sample_rate=22050)
+        audio = torch.tensor(audio).float()
         audio = torch.unsqueeze(audio, 0)
         if self.is_cuda():
             audio = audio.cuda()
