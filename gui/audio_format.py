@@ -1,9 +1,10 @@
 """Helper functions for working with audio files in NumPy."""
 """some code borrowed from https://github.com/mgeier/python-audio/blob/master/audio-files/utility.py"""
 
-import numpy as np
 import contextlib
+
 import librosa
+import numpy as np
 import soundfile
 
 

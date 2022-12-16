@@ -1,12 +1,12 @@
+import threading
 import time
 
 import cv2
 import numpy as np
 import torch
-import threading
 
 from gui.CombinedSource import AVCapture
-from gui.audio_preprocess import extract_features
+from gui.audio_preprocess import catch_audio_feature
 
 
 class ModelThread:
@@ -44,10 +44,17 @@ class ModelThread:
         audio_rand = np.random.random([int(22050 * 3.6)]).astype('f')
         audio_rand = self.get_audio_tensor(audio_rand)
 
-        video_rand = np.random.random([7, 256, 265, 3]).astype('f')
+        video_rand = np.random.random([15, 224, 224, 3]).astype('f')
         video_rand = self.get_video_tensor(video_rand)
 
-        self.model(audio_rand, video_rand)
+        self.model.eval()
+        with torch.no_grad():
+            video_rand = video_rand.permute(0, 2, 1, 3, 4)
+            video_rand = video_rand.reshape(video_rand.shape[0] * video_rand.shape[1], video_rand.shape[2],
+                                            video_rand.shape[3], video_rand.shape[4])
+            video_rand = video_rand.float()
+
+            self.model(audio_rand, video_rand)
 
     def start(self):
         if self.started:
@@ -64,9 +71,8 @@ class ModelThread:
         while self.started:
             (length_audio, audio_data), video_data = self.capture.read()
 
-            if length_audio != self.capture.audio.nb_samples or \
-                    len(video_data) != self.capture.video.nb_samples:
-                time.sleep(3)
+            if length_audio != self.capture.audio.n_samples or len(video_data) != 15:
+                time.sleep(1)
                 continue
 
             audio = self.get_audio_tensor(audio_data)
@@ -75,8 +81,8 @@ class ModelThread:
                 continue
 
             video = self.get_video_tensor(video_data)
-            if video.shape != torch.Size([1, 3, 7, 64, 64]):
-                print("wrong video.shape:", video.shape, "want [1, 3, 7, 64, 64]")
+            if video.shape != torch.Size([1, 3, 15, 224, 224]):
+                print("wrong video.shape:", video.shape, "want [1, 3, 15, 224, 224]")
                 continue
 
             with torch.no_grad():
@@ -91,7 +97,7 @@ class ModelThread:
             print("model output:", self.emotions[output])
 
     def get_video_tensor(self, video) -> torch.Tensor:
-        video = np.array([cv2.resize(im, (64, 64)) for im in video])
+        video = np.array([cv2.resize(im, (224, 224)) for im in video])
         video = torch.tensor(video).permute((3, 0, 1, 2))
         video = torch.unsqueeze(video, 0)
         if self.is_cuda():
@@ -100,7 +106,7 @@ class ModelThread:
         return video
 
     def get_audio_tensor(self, audio: np.ndarray) -> torch.Tensor:
-        audio = extract_features(audio, sample_rate=22050)
+        audio = catch_audio_feature(audio, 22050)
         audio = torch.tensor(audio).float()
         audio = torch.unsqueeze(audio, 0)
         if self.is_cuda():

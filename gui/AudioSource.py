@@ -1,8 +1,9 @@
-import numpy as np
-import pyaudio
 import logging
 import threading
 from collections import deque
+
+import numpy as np
+import pyaudio
 
 from gui import audio_format
 from gui.SensorSource import SensorSource
@@ -16,7 +17,7 @@ class AudioSource(SensorSource):
         # Initialise audio
         super().__init__()
 
-        self.nb_samples = nb_samples
+        self.n_samples = nb_samples
 
         self.CHUNK = 1024
         self.p = pyaudio.PyAudio()
@@ -28,7 +29,7 @@ class AudioSource(SensorSource):
         self.read_lock = threading.Lock()
 
         # Create a FIFO structure for the data
-        self._s_fifo = deque(maxlen=self.nb_samples)
+        self._s_fifo = deque(maxlen=self.n_samples)
         self.started = False
         self.read_lock = threading.Lock()
 

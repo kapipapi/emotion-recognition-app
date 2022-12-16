@@ -1,23 +1,22 @@
 import librosa
 import numpy as np
-import torch
 
 
-def get_mfccs(data: np.ndarray, sample_rate: int):
-    mfcc = librosa.feature.mfcc(y=data, sr=sample_rate, n_mfcc=10)
-    return mfcc
+def catch_audio_feature(x, sr):
+    features = np.empty((0, 156))
 
+    mfcc = librosa.feature.mfcc(y=x, sr=sr, n_mfcc=40)
+    features = np.append(features, mfcc, axis=0)
 
-def extract_features(data: np.ndarray, sample_rate: int):
-    mfcc = librosa.feature.mfcc(y=data, sr=sample_rate, n_mfcc=40)
-    mel = librosa.feature.melspectrogram(y=data, sr=sample_rate)
-    S = np.abs(librosa.stft(data))
-    spec = librosa.feature.spectral_contrast(S=S, sr=sample_rate)
-    z = librosa.effects.harmonic(data)
-    tonne = librosa.feature.tonnetz(y=z, sr=sample_rate)
+    mel = librosa.feature.melspectrogram(y=x, sr=sr)
+    features = np.append(features, mel, axis=0)
 
-    feature_list = np.concatenate((mfcc, mel, spec, tonne), axis=0, dtype=float)
+    s_abs = np.abs(librosa.stft(x))
+    spec = librosa.feature.spectral_contrast(S=s_abs, sr=sr)
+    features = np.append(features, spec, axis=0)
 
-    print("Audio, vector", feature_list.shape, type(feature_list))
+    y = librosa.effects.harmonic(x)
+    tonne = librosa.feature.tonnetz(y=y, sr=sr)
+    features = np.append(features, tonne, axis=0)
 
-    return feature_list
+    return features

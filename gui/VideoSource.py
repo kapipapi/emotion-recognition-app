@@ -1,10 +1,9 @@
-import cv2
-import time
-
-import numpy as np
-import torch
 import threading
 from collections import deque
+
+import cv2
+import numpy as np
+import torch
 from facenet_pytorch import MTCNN
 
 from gui.SensorSource import SensorSource
@@ -14,7 +13,7 @@ class VideoSource(SensorSource):
     """Object for video using OpenCV."""
     last_timestamp = 0
 
-    def __init__(self, src=0, nb_samples=7, sample_freq=2):
+    def __init__(self, src, n_samples):
         """Initialise video capture."""
         # width=640, height=480
         super().__init__()
@@ -22,31 +21,16 @@ class VideoSource(SensorSource):
         self.cap = cv2.VideoCapture(self.src)
         _, self.frame = self.cap.read()
 
-        self.nb_samples = nb_samples
-        self.sample_freq = sample_freq
+        self.n_samples = n_samples
         self.image_live = self.frame
-        self.fifo_image = deque(maxlen=self.nb_samples)
-        self.fifo_timestamp_ns = deque(maxlen=self.nb_samples)
+        self.fifo_image = deque(maxlen=self.n_samples)
 
         self.started = False
         self.read_lock = threading.Lock()
 
-        self.buffer_calculated_fps = 0
-
         self.device = torch.device('cuda') if torch.cuda.is_available() else 'cpu'
         self.mtcnn = MTCNN(image_size=(480, 640), device=self.device)
         self.mtcnn.to(self.device)
-
-    def calculate_fps(self, timestamp):
-        last_timestamp = 0
-        if len(self.fifo_timestamp_ns) > 0:
-            last_timestamp = self.fifo_timestamp_ns[-1]
-
-        diff = timestamp - last_timestamp
-        if diff == 0:
-            return 0
-
-        return 10 ** 9 / diff
 
     def update(self):
         """Update based on new video data."""
@@ -56,11 +40,6 @@ class VideoSource(SensorSource):
 
             with self.read_lock:
                 self.image_live = frame
-
-            timestamp = time.time_ns()
-            fps = self.calculate_fps(timestamp)
-            if fps >= self.sample_freq * 1.1:
-                continue
 
             img_tensor = torch.tensor(frame)
             img_tensor = img_tensor.to(self.device)
@@ -74,14 +53,22 @@ class VideoSource(SensorSource):
 
                 with self.read_lock:
                     if grabbed:
-                        self.buffer_calculated_fps = fps
                         self.fifo_image.append(face_cropped)
-                        self.fifo_timestamp_ns.append(timestamp)
 
-    def read(self) -> np.ndarray:
+    def read(self, n: int = 15) -> np.ndarray:
         """Read video."""
         with self.read_lock:
-            return np.asarray(self.fifo_image)
+            fifo_recent = np.asarray(self.fifo_image)
+
+        if len(fifo_recent) != self.n_samples:
+            return np.array([])
+
+        faces = []
+        for frame in fifo_recent[::self.n_samples // n + 1]:
+            faces.append(frame)
+
+        faces.append(fifo_recent[-1])
+        return np.asarray(faces)
 
     def read_live(self):
         """Read live video feed."""
@@ -93,7 +80,7 @@ class VideoSource(SensorSource):
 
 
 if __name__ == "__main__":
-    vs = VideoSource()
+    vs = VideoSource(src=0, n_samples=108)
     vs.start()
     while True:
         x = vs.read_live()

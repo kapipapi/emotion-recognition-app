@@ -1,8 +1,9 @@
-import torch
-import numpy as np
 import tkinter as tk
-from PIL import Image, ImageTk
+
 import matplotlib.pyplot as plt
+import numpy as np
+import torch
+from PIL import Image, ImageTk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 
 from gui.CombinedSource import AVCapture
@@ -25,10 +26,6 @@ class Booth:
     # audio setup
     sample_freq_audio = 22050
     nb_samples_audio = int(seconds * sample_freq_audio)
-
-    # video setup
-    model_clip_sample_frames = 7
-    sample_freq_video = model_clip_sample_frames / seconds
 
     # plot audio
     canvas = None
@@ -72,9 +69,8 @@ class Booth:
         print("[!] Async capture initialization")
         self.capture = AVCapture(
             sample_freq_audio=self.sample_freq_audio,
-            nb_samples_audio=self.nb_samples_audio,
-            nb_samples_video=self.model_clip_sample_frames,
-            sample_freq_video=self.sample_freq_video
+            n_samples_audio=self.nb_samples_audio,
+            n_samples_video=108
         )
         self.capture.start()
 
@@ -108,7 +104,6 @@ class Booth:
         print("")
         print("[i] Video info:")
         print("[i] \t sample duration:", self.seconds, "seconds")
-        print("[i] \t sample frequency:", self.sample_freq_video, "FPS")
         print("")
 
     def draw_audio(self, audio):

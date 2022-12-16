@@ -44,7 +44,7 @@ class CombinedSource:
 
 
 class AVCapture(CombinedSource):
-    def __init__(self, sample_freq_audio=44100, nb_samples_audio=65536, nb_samples_video=7, sample_freq_video=5):
+    def __init__(self, n_samples_video=108, sample_freq_audio=44100, n_samples_audio=65536):
         super().__init__()
-        self.audio = AudioSource(sample_freq_audio, nb_samples_audio)
-        self.video = VideoSource(nb_samples=nb_samples_video, sample_freq=sample_freq_video)
+        self.audio = AudioSource(sample_freq_audio, n_samples_audio)
+        self.video = VideoSource(src=0, n_samples=n_samples_video)
