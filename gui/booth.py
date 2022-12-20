@@ -36,7 +36,7 @@ class Booth:
     figure = None
     line = None
 
-    def __init__(self, plot_audio=False, model: torch.nn.Module = None, device: torch.device = None):
+    def __init__(self, plot_audio: bool = False, model: torch.nn.Module = None, device: torch.device = None):
         self.plot_audio = plot_audio
 
         assert model is not None

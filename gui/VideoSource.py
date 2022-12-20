@@ -29,7 +29,7 @@ class VideoSource(SensorSource):
         self.read_lock = threading.Lock()
 
         self.device = torch.device('cuda') if torch.cuda.is_available() else 'cpu'
-        self.mtcnn = MTCNN(image_size=(480, 640), device=self.device)
+        self.mtcnn = MTCNN(device=self.device)
         self.mtcnn.to(self.device)
 
     def update(self):
@@ -43,12 +43,14 @@ class VideoSource(SensorSource):
 
             img_tensor = torch.tensor(frame)
             img_tensor = img_tensor.to(self.device)
+            self.mtcnn.image_size = frame.shape
             bbox = self.mtcnn.detect(img_tensor)
             if bbox[0] is not None:
                 bbox = bbox[0][0]
                 bbox = [round(x) for x in bbox]
                 x1, y1, x2, y2 = bbox
                 face_cropped = frame[y1:y2, x1:x2, :]
+                face_cropped = cv2.cvtColor(face_cropped, cv2.COLOR_BGR2RGB)
                 face_cropped = cv2.resize(face_cropped, (224, 224))
 
                 with self.read_lock:
