@@ -10,7 +10,7 @@ from gui.audio_preprocess import catch_audio_feature
 
 
 class ModelThread:
-    emotions = ["neutral", "calm", "happy", "sad", "angry", 'fearful', 'disgust', 'surprised']
+    emotions = ["neutral/calm", "happy", "sad", "angry", 'fearful', 'disgust', 'surprised']
 
     def __init__(self, capture: AVCapture, model: torch.nn.Module = None, device: torch.device = None):
         self.capture = capture
@@ -60,6 +60,9 @@ class ModelThread:
         if self.started:
             return None
         self.started = True
+
+        print("Model thread starting")
+
         self.thread = threading.Thread(
             target=self.update,
             args=()

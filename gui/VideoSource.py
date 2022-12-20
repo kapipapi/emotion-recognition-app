@@ -38,8 +38,8 @@ class VideoSource(SensorSource):
             grabbed, frame = self.cap.read()
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
-            with self.read_lock:
-                self.image_live = frame
+            if not grabbed:
+                continue
 
             img_tensor = torch.tensor(frame)
             img_tensor = img_tensor.to(self.device)
@@ -52,8 +52,12 @@ class VideoSource(SensorSource):
                 face_cropped = cv2.resize(face_cropped, (224, 224))
 
                 with self.read_lock:
-                    if grabbed:
-                        self.fifo_image.append(face_cropped)
+                    cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 150), 3)
+                    self.image_live = frame
+                    self.fifo_image.append(face_cropped)
+            else:
+                with self.read_lock:
+                    self.image_live = frame
 
     def read(self, n: int = 15) -> np.ndarray:
         """Read video."""
@@ -63,12 +67,12 @@ class VideoSource(SensorSource):
         if len(fifo_recent) != self.n_samples:
             return np.array([])
 
-        faces = []
-        for frame in fifo_recent[::self.n_samples // n + 1]:
-            faces.append(frame)
+        selected_sample = []
+        idx = np.linspace(0, len(fifo_recent) - 1, n, dtype='int')
+        for frame in fifo_recent[idx]:
+            selected_sample.append(frame)
 
-        faces.append(fifo_recent[-1])
-        return np.asarray(faces)
+        return np.asarray(selected_sample)
 
     def read_live(self):
         """Read live video feed."""

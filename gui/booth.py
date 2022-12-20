@@ -27,6 +27,9 @@ class Booth:
     sample_freq_audio = 22050
     nb_samples_audio = int(seconds * sample_freq_audio)
 
+    # video setup
+    nb_samples_video = 108
+
     # plot audio
     canvas = None
     toolbar = None
@@ -70,7 +73,7 @@ class Booth:
         self.capture = AVCapture(
             sample_freq_audio=self.sample_freq_audio,
             n_samples_audio=self.nb_samples_audio,
-            n_samples_video=108
+            n_samples_video=self.nb_samples_video
         )
         self.capture.start()
 
@@ -80,6 +83,7 @@ class Booth:
             print("[!] MODEL IS EMPTY")
             self.on_close()
         else:
+            self.model = ModelThread(self.capture, model, device)
             self.model = ModelThread(self.capture, model, device)
             self.model.start()
 
@@ -103,6 +107,8 @@ class Booth:
         print("[i] \t sample duration:", self.seconds, "seconds")
         print("")
         print("[i] Video info:")
+        print("[i] \t sample count:", 15, "frames on net")
+        print("[i] \t sample bufor:", self.nb_samples_video, "frames on fifo")
         print("[i] \t sample duration:", self.seconds, "seconds")
         print("")
 
