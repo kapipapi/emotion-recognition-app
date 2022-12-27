@@ -43,11 +43,9 @@ class VideoSource(SensorSource):
                 self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
                 continue
 
-            temp = frame[:, :, -1]
-            im_rgb = frame.copy()
-            im_rgb[:, :, -1] = im_rgb[:, :, 0]
-            im_rgb[:, :, 0] = temp
-            im_rgb = torch.tensor(im_rgb)
+            # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+            im_rgb = torch.tensor(frame)
             im_rgb = im_rgb.to(self.device)
 
             bbox = self.mtcnn.detect(im_rgb)
@@ -67,10 +65,9 @@ class VideoSource(SensorSource):
 
                 with self.read_lock:
                     self.fifo_image.append(face_cropped)
-                    self.image_live = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            else:
-                with self.read_lock:
-                    self.image_live = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+            with self.read_lock:
+                self.image_live = frame
 
     def read(self, n: int = 15) -> np.ndarray:
         """Read video."""

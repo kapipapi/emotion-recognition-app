@@ -12,7 +12,7 @@ cap = cv2.VideoCapture("../Actor_01/01-01-03-01-02-01-01.mp4")
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 model = MultimodalModelTFusion()
-model.load_state_dict(torch.load("../weights/model_76_final.pth"))
+model.load_state_dict(torch.load("../weights/model_76_final.pth", map_location=device))
 model.to(device)
 
 mtcnn = MTCNN(device=device)
@@ -28,12 +28,7 @@ def run_model(video_data):
     for i in range(np.shape(video_data)[0]):
         clip.append(torch.tensor(video_data[i]))
 
-    clip = torch.stack(clip, 0).permute(3, 0, 1, 2)
-
-    print(clip.shape)
-
-    clip = clip.permute(1, 0, 2, 3)
-    clip = clip.reshape(clip.shape[0], clip.shape[1], clip.shape[2], clip.shape[3])
+    clip = torch.stack(clip, 0).permute(0, 3, 1, 2)
 
     print(clip.shape)
 
@@ -41,7 +36,7 @@ def run_model(video_data):
 
     output = model([], clip)
 
-    print(emotions[np.argmax(output.cpu().detach().numpy())])
+    print(emotions[np.argmax(output.tolist())])
 
 
 while cap.isOpened():
@@ -50,11 +45,7 @@ while cap.isOpened():
         cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
         continue
 
-    temp = frame[:, :, -1]
-    im_rgb = frame.copy()
-    im_rgb[:, :, -1] = im_rgb[:, :, 0]
-    im_rgb[:, :, 0] = temp
-    im_rgb = torch.tensor(im_rgb)
+    im_rgb = torch.tensor(frame)
     im_rgb = im_rgb.to(device)
 
     bbox = mtcnn.detect(im_rgb)
