@@ -10,7 +10,7 @@ from gui.audio_preprocess import catch_audio_feature
 
 
 class ModelThread:
-    emotions = ["neutral/calm", "happy", "sad", "angry", 'fearful', 'disgust', 'surprised']
+    emotions = ["neutral", "calm", "happy", "sad", "angry", 'fearful', 'disgust', 'surprised']
 
     def __init__(self, capture: AVCapture, model: torch.nn.Module = None, device: torch.device = None):
         self.capture = capture
@@ -30,11 +30,11 @@ class ModelThread:
 
         assert self.model is not None
 
-        self.model.to(self.device)
-        if self.is_cuda():
-            self.model.cuda(self.device)
-
-        self.model.eval()
+        # self.model.to(self.device)
+        # if self.is_cuda():
+        #     self.model.cuda(self.device)
+        #
+        # self.model.eval()
 
     def is_cuda(self):
         return self.device == torch.device('cuda')
@@ -72,30 +72,35 @@ class ModelThread:
 
     def update(self):
         while self.started:
-            (length_audio, audio_data), video_data = self.capture.read()
+            (length_audio, audio_data), video = self.capture.read()
 
-            if length_audio != self.capture.audio.n_samples or len(video_data) != 15:
+            if video is None:
+                continue
+
+            if length_audio != self.capture.audio.n_samples or video.shape != (15, 3, 224, 224):
                 time.sleep(1)
                 continue
+
+            # test = []
+            # for f in video:
+                # test.append(np.array(f.permute(1, 2, 0).int().tolist()))
+
+            # buf = cv2.hconcat(test)
 
             audio = self.get_audio_tensor(audio_data)
             if audio.shape != torch.Size([1, 181, 156]):
                 print("wrongaudio.shape:", audio.shape, "want [1, 181, 156]")
                 continue
 
-            video = self.get_video_tensor(video_data)
+            video = self.get_video_tensor(video)
             if video.shape != torch.Size([1, 3, 15, 224, 224]):
                 print("wrong video.shape:", video.shape, "want [1, 3, 15, 224, 224]")
                 continue
 
             with torch.no_grad():
-                video = video.permute(0, 2, 1, 3, 4)
-                video = video.reshape(video.shape[0] * video.shape[1], video.shape[2], video.shape[3], video.shape[4])
-                video = video.float()
-
-                output = self.model(audio, video)
-
-            output = np.argmax(torch.nn.functional.softmax(output, dim=1).tolist())
+                output = self.model(audio, video.cuda().float())
+                print(output)
+                output = np.argmax(output.tolist())
 
             print("model output:", self.emotions[output])
 
