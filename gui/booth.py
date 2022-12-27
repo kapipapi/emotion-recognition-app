@@ -28,7 +28,7 @@ class Booth:
     nb_samples_audio = int(seconds * sample_freq_audio)
 
     # video setup
-    nb_samples_video = 108
+    nb_samples_video = 50
 
     # plot audio
     canvas = None
@@ -83,7 +83,6 @@ class Booth:
             print("[!] MODEL IS EMPTY")
             self.on_close()
         else:
-            self.model = ModelThread(self.capture, model, device)
             self.model = ModelThread(self.capture, model, device)
             self.model.start()
 
