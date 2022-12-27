@@ -92,11 +92,11 @@ class ModelThread:
                 print("wrongaudio.shape:", audio.shape, "want [1, 181, 156]")
                 continue
 
-            # video = self.get_video_tensor(video_data)
-            # if video.shape != torch.Size([1, 3, 15, 224, 224]):
-            #     print("wrong video.shape:", video.shape, "want [1, 3, 15, 224, 224]")
-            #     continue
-            # self.model.eval()
+            video = self.get_video_tensor(video)
+            if video.shape != torch.Size([1, 3, 15, 224, 224]):
+                print("wrong video.shape:", video.shape, "want [1, 3, 15, 224, 224]")
+                continue
+
             with torch.no_grad():
                 output = self.model(audio, video.cuda().float())
                 print(output)

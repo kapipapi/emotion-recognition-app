@@ -39,9 +39,6 @@ class VideoSource(SensorSource):
             grabbed, frame = self.cap.read()
             self.timestamps.append(time.time())
 
-            # I think this break the rules
-            # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
             if not grabbed:
                 self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
                 continue
@@ -91,12 +88,11 @@ class VideoSource(SensorSource):
                 frame = fifo_recent[i]
                 clip.append(torch.tensor(frame))
 
-            clip = torch.stack(clip, 0).permute(3, 0, 1, 2)
+            # shape 15, 224, 224, 3
 
-            # 3, 15 ,224 224
+            clip = torch.stack(clip, 0).permute(0, 3, 1, 2)
 
-            clip = clip.permute(1, 0, 2, 3)
-            # clip = clip.reshape(clip.shape[0], clip.shape[1], clip.shape[2], clip.shape[3])
+            # shape 15, 3, 224, 224
 
             return clip
 
