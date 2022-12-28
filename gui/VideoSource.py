@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 import torch
 from facenet_pytorch import MTCNN
+from torchvision import transforms
 
 from gui.SensorSource import SensorSource
 
@@ -33,6 +34,11 @@ class VideoSource(SensorSource):
         self.mtcnn = MTCNN(device=self.device)
         self.mtcnn.to(self.device)
 
+        self.vid_trans = transforms.Compose([
+            transforms.ToTensor(),
+            transforms.Normalize(0.5, 0.5)
+        ])
+
     def update(self):
         """Update based on new video data."""
         while self.started:
@@ -44,7 +50,7 @@ class VideoSource(SensorSource):
                 continue
 
             # this you could toggle RGB BRG color spaces
-            # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             im_rgb = torch.tensor(frame)
             im_rgb = im_rgb.to(self.device)
@@ -65,12 +71,13 @@ class VideoSource(SensorSource):
                 cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 150), 3)
 
                 with self.read_lock:
-                    self.fifo_image.append(face_cropped)
+                    transformed = self.vid_trans(face_cropped)
+                    self.fifo_image.append(transformed)
 
             with self.read_lock:
                 self.image_live = frame
 
-    def read(self, n: int = 15) -> np.ndarray:
+    def read(self, n: int = 15) -> [torch.Tensor]:
         """Read video."""
         with self.read_lock:
             fifo_recent = self.fifo_image
@@ -78,17 +85,13 @@ class VideoSource(SensorSource):
             if len(fifo_recent) != self.n_samples:
                 return np.array([])
 
-            print("differance", self.timestamps[-1] - self.timestamps[0])
-
             clip = []
             idx = np.linspace(0, len(fifo_recent) - 1, n, dtype='int')
             for i in idx:
                 frame = fifo_recent[i]
-                clip.append(torch.tensor(frame))
+                clip.append(frame)
 
-            # shape 15, 224, 224, 3
-
-            clip = torch.stack(clip, 0).permute(0, 3, 1, 2)
+            clip = torch.stack(clip, 0)
 
             # shape 15, 3, 224, 224
 

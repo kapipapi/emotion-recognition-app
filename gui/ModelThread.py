@@ -67,7 +67,7 @@ class ModelThread:
                 print("wrong video.shape:", video.shape, "want [15, 3, 224, 224]")
                 continue
 
-            # self.model.eval()
+            self.model.eval()
             with torch.no_grad():
                 output = self.model(audio, video.cuda().float())
                 output = output.tolist()
@@ -77,7 +77,7 @@ class ModelThread:
 
                 emotion_index = np.argmax(output)
 
-            print("model output:", self.emotions[emotion_index])
+                print("model output:", self.emotions[emotion_index])
 
     def get_audio_tensor(self, audio: np.ndarray) -> torch.Tensor:
         audio = catch_audio_feature(audio, 22050)
