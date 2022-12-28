@@ -43,6 +43,7 @@ class VideoSource(SensorSource):
                 self.cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
                 continue
 
+            # this you could toggle RGB BRG color spaces
             # frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
             im_rgb = torch.tensor(frame)
