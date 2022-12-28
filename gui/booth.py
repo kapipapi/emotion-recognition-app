@@ -134,7 +134,8 @@ class Booth:
 
     def video_gui(self):
         cv_frame = self.capture.video.read_live()
-        self.draw_video(cv_frame)
+        if cv_frame is not None:
+            self.draw_video(cv_frame)
 
     def update(self):
         self.audio_gui()
