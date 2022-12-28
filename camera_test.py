@@ -20,7 +20,7 @@ mtcnn.to(device)
 
 faces = deque(maxlen=15)
 
-emotions = ["neutral", "calm", "happy", "sad", "angry", 'fearful', 'disgust', 'surprised']
+emotions = ["neutral/calm", "happy", "sad", "angry", 'fearful', 'disgust', 'surprised']
 
 
 def run_model(video_data):
@@ -68,4 +68,4 @@ while cap.isOpened():
 
     cv2.imshow("test", frame)
     if cv2.waitKey(1) == ord('q'):
-        exit(0)
+        break

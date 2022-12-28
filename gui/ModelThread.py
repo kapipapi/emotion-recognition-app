@@ -10,7 +10,7 @@ from gui.audio_preprocess import catch_audio_feature
 
 
 class ModelThread:
-    emotions = ["neutral", "calm", "happy", "sad", "angry", 'fearful', 'disgust', 'surprised']
+    emotions = ["neutral/calm", "happy", "sad", "angry", 'fearful', 'disgust', 'surprised']
     output_csv = []
 
     def __init__(self, capture: AVCapture, model: torch.nn.Module = None, device: torch.device = None):
