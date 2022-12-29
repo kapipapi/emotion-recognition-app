@@ -86,7 +86,6 @@ class VideoSource(SensorSource):
                 clip.append(frame)
 
             clip = torch.stack(clip, 0)
-
             return clip
 
     def read_live(self):

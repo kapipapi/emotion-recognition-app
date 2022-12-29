@@ -63,17 +63,20 @@ class ModelThread:
 
             self.model.eval()
             with torch.no_grad():
-                if torch.equal(self.last_audio_detection, audio):
-                    print("WARNING: No audio detected")
-                    output = self.model(video=video.float())
-                elif torch.equal(self.last_face_detection, video):
-                    print("WARNING: No face detected")
-                    output = self.model(audio=audio)
+                if torch.equal(self.last_audio_detection, audio) and torch.equal(self.last_face_detection, video):
+                    print("WARNING: No face and audio detected, model does not predict.")
                 else:
-                    output = self.model(audio, video.float())
+                    if torch.equal(self.last_audio_detection, audio):
+                        print("WARNING: No audio detected")
+                        output = self.model(video=video.float())
+                    elif torch.equal(self.last_face_detection, video):
+                        print("WARNING: No face detected")
+                        output = self.model(audio=audio)
+                    else:
+                        output = self.model(audio, video.float())
 
-                emotion_index = np.argmax(output.tolist())
-                print("Model output:", self.emotions[emotion_index])
+                    emotion_index = np.argmax(output.tolist())
+                    print("Model output:", self.emotions[emotion_index])
 
             self.last_face_detection = video
             self.last_audio_detection = audio

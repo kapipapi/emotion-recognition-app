@@ -25,14 +25,13 @@ class AudioSource(SensorSource):
                                frames_per_buffer=self.CHUNK)
         self.read_lock = threading.Lock()
 
-        # Create a FIFO structure for the data
         self._s_fifo = deque(maxlen=self.n_samples)
         self.started = False
         self.read_lock = threading.Lock()
 
         rel = self.sample_freq / self.CHUNK
         self.slid_window = deque(maxlen=int(rel))
-        self.audio_threshold = 2000
+        self.audio_threshold = 1600
 
     def update(self):
         """Update based on new audio data."""
