@@ -29,6 +29,7 @@ class Booth:
     toolbar = None
     figure = None
     line = None
+    bar = None
 
     def __init__(self, plot_audio: bool, model: torch.nn.Module, device: torch.device):
 
@@ -39,7 +40,9 @@ class Booth:
         self.init_model(model, device)
 
         if self.plot_audio:
-            self.init_plot()
+            self.init_audio_plot()
+        else:
+            self.init_bar_plot()
 
         self.print_info()
         self.update()
@@ -52,10 +55,7 @@ class Booth:
 
         self.label_output = tk.StringVar()
 
-        if self.plot_audio:
-            self.root.geometry("640x660")
-        else:
-            self.root.geometry("640x500")
+        self.root.geometry("640x660")
 
         self.root.title("AV Emotion Recognition")
 
@@ -76,7 +76,7 @@ class Booth:
         self.model = ModelThread(self.capture, model, device)
         self.model.start()
 
-    def init_plot(self):
+    def init_audio_plot(self):
         print("[!] Audio plot initialization")
 
         self.figure = plt.Figure(figsize=(8, 2), dpi=80)
@@ -85,6 +85,19 @@ class Booth:
 
         time = np.linspace(-self.seconds, 0, num=self.nb_samples_audio)
         self.line, = ax.plot(time, [0] * self.nb_samples_audio)
+
+        self.canvas = FigureCanvasTkAgg(self.figure, master=self.root)
+        self.canvas.draw()
+        self.canvas.get_tk_widget().grid(row=1, column=0)
+
+    def init_bar_plot(self):
+        print("[!] Bar plot initialization")
+
+        self.figure = plt.Figure(figsize=(8, 2), dpi=80)
+        ax = self.figure.add_subplot()
+        ax.set_ylim(0, 1)
+
+        self.bar = ax.bar(["neutral/calm", "happy", "sad", "angry", 'fearful', 'disgust', 'surprised'], [0] * 7)
 
         self.canvas = FigureCanvasTkAgg(self.figure, master=self.root)
         self.canvas.draw()
@@ -101,8 +114,18 @@ class Booth:
         print("[i] \t Sample duration:", self.seconds, "seconds")
         print("")
 
-    def draw_audio(self, audio):
+    def draw_audio_plot(self, audio):
         self.line.set_ydata(audio)
+        self.canvas.draw()
+        self.canvas.flush_events()
+
+    def draw_emotion_bar_plot(self, emotions):
+        emotions = emotions[0]
+        emotions = np.exp(emotions)/sum(np.exp(emotions))
+
+        for rect, h in zip(self.bar, emotions):
+            rect.set_height(h)
+
         self.canvas.draw()
         self.canvas.flush_events()
 
@@ -120,7 +143,13 @@ class Booth:
         if self.plot_audio:
             length, data_audio = self.capture.audio.read()
             if length == self.nb_samples_audio:
-                self.draw_audio(data_audio)
+                self.draw_audio_plot(data_audio)
+
+    def bar_plot(self):
+        if not self.plot_audio:
+            emotion, emotion_list = self.model.read()
+            if emotion_list is not None:
+                self.draw_emotion_bar_plot(emotion_list)
 
     def video_gui(self):
         if self.capture is not None:
@@ -131,6 +160,7 @@ class Booth:
     def update(self):
         self.audio_gui()
         self.video_gui()
+        self.bar_plot()
 
         self.label_output.set(f"Detected emotion: {self.model.last_emotion}")
 

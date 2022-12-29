@@ -15,6 +15,7 @@ class ModelThread:
     last_audio = torch.zeros([1, 181, 156])
 
     last_emotion = ""
+    emotion_tensor = None
 
     def __init__(self, capture: AVCapture, model: torch.nn.Module = None, device: torch.device = None):
         self.capture = capture
@@ -84,11 +85,12 @@ class ModelThread:
                         output = self.model(audio, video)
 
                     self.last_emotion = self.emotions[np.argmax(output.tolist())]
+                    self.emotion_tensor = output.tolist()
 
             self.last_faces = video
             self.last_audio = audio
 
-            print(time.time()-start, "seconds of model evaluation")
+            print(time.time() - start, "seconds of model evaluation")
 
     def get_audio_tensor(self, audio: np.ndarray) -> torch.Tensor:
         audio = catch_audio_feature(audio, 22050)
@@ -110,3 +112,6 @@ class ModelThread:
     def stop(self):
         self.started = False
         self.thread.join()
+
+    def read(self):
+        return self.last_emotion, self.emotion_tensor
