@@ -13,7 +13,7 @@ from gui.SensorSource import SensorSource
 class AudioSource(SensorSource):
     """Object for audio using alsaaudio."""
 
-    def __init__(self, sample_freq=44100, nb_samples=65536):
+    def __init__(self, sample_freq, nb_samples):
         """Initialise audio capture."""
         super().__init__()
 

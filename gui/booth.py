@@ -1,7 +1,7 @@
-import matplotlib.pyplot as plt
-import numpy as np
 import tkinter as tk
 
+import matplotlib.pyplot as plt
+import numpy as np
 import torch
 from PIL import Image, ImageTk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -32,6 +32,7 @@ class Booth:
 
     def __init__(self, plot_audio: bool, model: torch.nn.Module, device: torch.device):
 
+        self.label_output = None
         self.plot_audio = plot_audio
         self.init_tk()
         self.init_capture()
@@ -49,13 +50,16 @@ class Booth:
         print("[!] Creating tkinter GUI")
         self.root = tk.Tk()
 
+        self.label_output = tk.StringVar()
+
         if self.plot_audio:
-            self.root.geometry("640x640")
+            self.root.geometry("640x660")
         else:
-            self.root.geometry("640x480")
+            self.root.geometry("640x500")
 
         self.root.title("AV Emotion Recognition")
-        self.label = tk.Label(self.root)
+
+        self.label = tk.Label(self.root, textvariable=self.label_output, compound="top")
         self.label.grid(row=0, column=0)
 
     def init_capture(self):
@@ -119,13 +123,16 @@ class Booth:
                 self.draw_audio(data_audio)
 
     def video_gui(self):
-        cv_frame = self.capture.video.read_live()
-        if cv_frame is not None:
-            self.draw_video(cv_frame)
+        if self.capture is not None:
+            cv_frame = self.capture.video.read_live()
+            if cv_frame is not None:
+                self.draw_video(cv_frame)
 
     def update(self):
         self.audio_gui()
         self.video_gui()
+
+        self.label_output.set(f"Detected emotion: {self.model.last_emotion}")
 
         self.root.after(self.live_video_delay, self.update)
 
