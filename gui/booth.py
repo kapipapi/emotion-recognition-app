@@ -1,7 +1,7 @@
-import tkinter as tk
-
 import matplotlib.pyplot as plt
 import numpy as np
+import tkinter as tk
+
 import torch
 from PIL import Image, ImageTk
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
@@ -11,37 +11,28 @@ from gui.ModelThread import ModelThread
 
 
 class Booth:
-    # GUI
     root: tk.Tk = None
     label: tk.Label = None
     live_video_delay = 15
 
-    # capture
     seconds = 3.6
     capture: AVCapture = None
 
-    # model
     model = None
 
-    # audio setup
     sample_freq_audio = 22050
     nb_samples_audio = int(seconds * sample_freq_audio)
 
-    # video setup
     nb_samples_video = 50
 
-    # plot audio
     canvas = None
     toolbar = None
     figure = None
     line = None
 
-    def __init__(self, plot_audio: bool = False, model: torch.nn.Module = None, device: torch.device = None):
+    def __init__(self, plot_audio: bool, model: torch.nn.Module, device: torch.device):
+
         self.plot_audio = plot_audio
-
-        assert model is not None
-        assert device is not None
-
         self.init_tk()
         self.init_capture()
         self.init_model(model, device)
@@ -50,7 +41,6 @@ class Booth:
             self.init_plot()
 
         self.print_info()
-
         self.update()
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
         self.root.mainloop()
@@ -79,12 +69,8 @@ class Booth:
 
     def init_model(self, model, device):
         print("[!] Model initialization")
-        if model is None:
-            print("[!] MODEL IS EMPTY")
-            self.on_close()
-        else:
-            self.model = ModelThread(self.capture, model, device)
-            self.model.start()
+        self.model = ModelThread(self.capture, model, device)
+        self.model.start()
 
     def init_plot(self):
         print("[!] Audio plot initialization")
@@ -102,13 +88,13 @@ class Booth:
 
     def print_info(self):
         print("[i] Audio info:")
-        print("[i] \t sample frequency:", self.sample_freq_audio)
-        print("[i] \t sample duration:", self.seconds, "seconds")
+        print("[i] \t Sample frequency:", self.sample_freq_audio)
+        print("[i] \t Sample duration:", self.seconds, "seconds")
         print("")
         print("[i] Video info:")
-        print("[i] \t sample count:", 15, "frames on net")
-        print("[i] \t sample bufor:", self.nb_samples_video, "frames on fifo")
-        print("[i] \t sample duration:", self.seconds, "seconds")
+        print("[i] \t Sample count:", 15, "frames on net")
+        print("[i] \t Sample buffer:", self.nb_samples_video, "frames on fifo")
+        print("[i] \t Sample duration:", self.seconds, "seconds")
         print("")
 
     def draw_audio(self, audio):
@@ -146,8 +132,7 @@ class Booth:
     def on_close(self):
         print("Ending processes")
         self.capture.stop()
-        if self.model is not None:
-            self.model.stop()
+        self.model.stop()
         del self.capture
         self.root.destroy()
         print("Processes closed")
