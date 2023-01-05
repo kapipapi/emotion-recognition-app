@@ -62,7 +62,7 @@ class VideoSource(SensorSource):
 
                 face_cropped = cv2.resize(face_cropped, (224, 224))
 
-                cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 150), 2)
+                cv2.rectangle(frame, (x1, y1), (x2, y2), (137, 207, 240), 1)
 
                 with self.read_lock:
                     transformed = self.vid_trans(face_cropped)

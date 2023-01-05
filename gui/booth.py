@@ -32,7 +32,7 @@ class Booth:
     bar = None
 
     def __init__(self, plot_audio: bool, model: torch.nn.Module, device: torch.device):
-
+        self.bar_canvas = None
         self.label_output = None
         self.plot_audio = plot_audio
         self.init_tk()
@@ -59,7 +59,8 @@ class Booth:
 
         self.root.title("AV Emotion Recognition")
 
-        self.label = tk.Label(self.root, textvariable=self.label_output, compound="top")
+        self.label = tk.Label(self.root, textvariable=self.label_output, compound="top",
+                              font=("Calibri", 10))
         self.label.grid(row=0, column=0)
 
     def init_capture(self):
@@ -91,17 +92,19 @@ class Booth:
         self.canvas.get_tk_widget().grid(row=1, column=0)
 
     def init_bar_plot(self):
+        plt.style.use('ggplot')
         print("[!] Bar plot initialization")
 
         self.figure = plt.Figure(figsize=(8, 2), dpi=80)
         ax = self.figure.add_subplot()
         ax.set_ylim(0, 1)
 
-        self.bar = ax.bar(["neutral/calm", "happy", "sad", "angry", 'fearful', 'disgust', 'surprised'], [0] * 7)
+        self.bar = ax.bar(["neutral/calm", "happy", "sad", "angry", 'fearful', 'disgust', 'surprised'], [0] * 7,
+                          color='#89CFF0', edgecolor='#818589', linewidth=1)
 
-        self.canvas = FigureCanvasTkAgg(self.figure, master=self.root)
-        self.canvas.draw()
-        self.canvas.get_tk_widget().grid(row=1, column=0)
+        self.bar_canvas = FigureCanvasTkAgg(self.figure, master=self.root)
+        self.bar_canvas.draw()
+        self.bar_canvas.get_tk_widget().grid(row=1, column=0)
 
     def print_info(self):
         print("[i] Audio info:")
@@ -121,13 +124,13 @@ class Booth:
 
     def draw_emotion_bar_plot(self, emotions):
         emotions = emotions[0]
-        emotions = np.exp(emotions)/sum(np.exp(emotions))
+        emotions = np.exp(emotions) / sum(np.exp(emotions))
 
         for rect, h in zip(self.bar, emotions):
             rect.set_height(h)
 
-        self.canvas.draw()
-        self.canvas.flush_events()
+        self.bar_canvas.draw()
+        self.bar_canvas.flush_events()
 
     @staticmethod
     def cv2tk(image: np.ndarray) -> ImageTk:
