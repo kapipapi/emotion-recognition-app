@@ -1,3 +1,4 @@
+import time
 import tkinter as tk
 
 import matplotlib.pyplot as plt
@@ -13,7 +14,6 @@ from gui.ModelThread import ModelThread
 class Booth:
     root: tk.Tk = None
     label: tk.Label = None
-    live_video_delay = 15
 
     seconds = 3.6
     capture: AVCapture = None
@@ -32,6 +32,7 @@ class Booth:
     bar = None
 
     def __init__(self, plot_audio: bool, model: torch.nn.Module, device: torch.device):
+        self.emotion_list_cache = None
         self.bar_canvas = None
         self.label_output = None
         self.plot_audio = plot_audio
@@ -122,15 +123,16 @@ class Booth:
         self.canvas.draw()
         self.canvas.flush_events()
 
-    def draw_emotion_bar_plot(self, emotions):
-        emotions = emotions[0]
+    def draw_emotion_bar_plot(self):
+        emotions = self.emotion_list_cache[0]
         emotions = np.exp(emotions) / sum(np.exp(emotions))
 
         for rect, h in zip(self.bar, emotions):
             rect.set_height(h)
 
+        s = time.time()
         self.bar_canvas.draw()
-        self.bar_canvas.flush_events()
+        print(time.time() - s, "sekund suda")
 
     @staticmethod
     def cv2tk(image: np.ndarray) -> ImageTk:
@@ -151,8 +153,9 @@ class Booth:
     def bar_plot(self):
         if not self.plot_audio:
             emotion, emotion_list = self.model.read()
-            if emotion_list is not None:
-                self.draw_emotion_bar_plot(emotion_list)
+            if emotion_list is not None and emotion_list is not self.emotion_list_cache:
+                self.emotion_list_cache = emotion_list
+                self.draw_emotion_bar_plot()
 
     def video_gui(self):
         if self.capture is not None:
@@ -167,7 +170,7 @@ class Booth:
 
         self.label_output.set(f"Detected emotion: {self.model.last_emotion}")
 
-        self.root.after(self.live_video_delay, self.update)
+        self.root.after(5, self.update)
 
     def on_close(self):
         print("Ending processes")
