@@ -14,10 +14,9 @@ class ModelThread:
     last_faces = torch.zeros([15, 3, 224, 224])
     last_audio = torch.zeros([1, 181, 156])
 
-    last_emotion = ""
-    emotion_tensor = None
-
     def __init__(self, capture: AVCapture, model: torch.nn.Module = None, device: torch.device = None):
+        self.emotion_tensor = None
+        self.last_emotion = None
         self.capture = capture
 
         self.started = False
@@ -31,7 +30,6 @@ class ModelThread:
     def load_model(self):
         if self.device is None:
             self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-
         assert self.model is not None
 
     def start(self):
@@ -54,7 +52,7 @@ class ModelThread:
             (length_audio, audio_data), video = self.capture.read()
 
             if length_audio != self.capture.audio.n_samples or video.shape != (15, 3, 224, 224):
-                print("No AV signals, waiting for buffor to fill-up.")
+                print("No AV signals, waiting for buffer to fill-up.")
                 time.sleep(1)
                 continue
 
@@ -99,14 +97,12 @@ class ModelThread:
         if self.device == torch.device('cuda'):
             audio = audio.cuda()
             self.last_faces = self.last_faces.cuda()
-
         return audio
 
     def get_video_tensor(self, video: [torch.Tensor]) -> [torch.Tensor]:
         if self.device == torch.device('cuda'):
             video = video.cuda()
             self.last_audio = self.last_audio.cuda()
-
         return video.float()
 
     def stop(self):
