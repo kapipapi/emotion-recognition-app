@@ -1,4 +1,3 @@
-import time
 import tkinter as tk
 
 import matplotlib.pyplot as plt
@@ -14,36 +13,28 @@ from gui.ModelThread import ModelThread
 class Booth:
     root: tk.Tk = None
     label: tk.Label = None
-
-    seconds = 3.6
     capture: AVCapture = None
-
-    model = None
+    seconds = 3.6
 
     sample_freq_audio = 22050
     nb_samples_audio = int(seconds * sample_freq_audio)
+    nb_samples_video = 30
 
-    nb_samples_video = 50
-
+    model = None
     canvas = None
     toolbar = None
     figure = None
     line = None
     bar = None
 
-    def __init__(self, plot_audio: bool, model: torch.nn.Module, device: torch.device):
+    def __init__(self, model: torch.nn.Module, device: torch.device):
         self.emotion_list_cache = None
         self.bar_canvas = None
         self.label_output = None
-        self.plot_audio = plot_audio
         self.init_tk()
         self.init_capture()
         self.init_model(model, device)
-
-        if self.plot_audio:
-            self.init_audio_plot()
-        else:
-            self.init_bar_plot()
+        self.init_bar_plot()
 
         self.print_info()
         self.update()
@@ -53,13 +44,9 @@ class Booth:
     def init_tk(self):
         print("[!] Creating tkinter GUI")
         self.root = tk.Tk()
-
         self.label_output = tk.StringVar()
-
         self.root.geometry("640x660")
-
         self.root.title("AV Emotion Recognition")
-
         self.label = tk.Label(self.root, textvariable=self.label_output, compound="top",
                               font=("Calibri", 10))
         self.label.grid(row=0, column=0)
@@ -77,20 +64,6 @@ class Booth:
         print("[!] Model initialization")
         self.model = ModelThread(self.capture, model, device)
         self.model.start()
-
-    def init_audio_plot(self):
-        print("[!] Audio plot initialization")
-
-        self.figure = plt.Figure(figsize=(8, 2), dpi=80)
-        ax = self.figure.add_subplot()
-        ax.set_ylim(-1, 1)
-
-        time = np.linspace(-self.seconds, 0, num=self.nb_samples_audio)
-        self.line, = ax.plot(time, [0] * self.nb_samples_audio)
-
-        self.canvas = FigureCanvasTkAgg(self.figure, master=self.root)
-        self.canvas.draw()
-        self.canvas.get_tk_widget().grid(row=1, column=0)
 
     def init_bar_plot(self):
         plt.style.use('ggplot')
@@ -118,11 +91,6 @@ class Booth:
         print("[i] \t Sample duration:", self.seconds, "seconds")
         print("")
 
-    def draw_audio_plot(self, audio):
-        self.line.set_ydata(audio)
-        self.canvas.draw()
-        self.canvas.flush_events()
-
     def draw_emotion_bar_plot(self):
         emotions = self.emotion_list_cache[0]
         emotions = np.exp(emotions) / sum(np.exp(emotions))
@@ -130,9 +98,7 @@ class Booth:
         for rect, h in zip(self.bar, emotions):
             rect.set_height(h)
 
-        s = time.time()
         self.bar_canvas.draw()
-        print(time.time() - s, "sekund suda")
 
     @staticmethod
     def cv2tk(image: np.ndarray) -> ImageTk:
@@ -143,12 +109,6 @@ class Booth:
         video = self.cv2tk(cv_frame)
         self.label.imgtk = video
         self.label.configure(image=video)
-
-    def audio_gui(self):
-        if self.plot_audio:
-            length, data_audio = self.capture.audio.read()
-            if length == self.nb_samples_audio:
-                self.draw_audio_plot(data_audio)
 
     def bar_plot(self):
         if not self.plot_audio:
@@ -164,7 +124,6 @@ class Booth:
                 self.draw_video(cv_frame)
 
     def update(self):
-        self.audio_gui()
         self.video_gui()
         self.bar_plot()
 

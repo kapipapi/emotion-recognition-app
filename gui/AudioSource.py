@@ -29,8 +29,7 @@ class AudioSource(SensorSource):
         self.started = False
         self.read_lock = threading.Lock()
 
-        rel = self.sample_freq / self.CHUNK
-        self.slid_window = deque(maxlen=int(rel))
+        self.slid_window = deque(maxlen=int(self.sample_freq / self.CHUNK))
         self.audio_threshold = 1600
 
     def update(self):

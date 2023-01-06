@@ -9,4 +9,4 @@ model = MultimodalModelTFusion()
 model.load_state_dict(torch.load("./weights/model_76_final.pth", map_location=device))
 model.to(device)
 
-b = Booth(model=model, device=device, plot_audio=False)
+b = Booth(model=model, device=device)
